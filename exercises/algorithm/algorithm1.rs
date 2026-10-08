@@ -3,8 +3,6 @@
 	This problem requires you to merge two ordered singly linked lists into one ordered singly linked list
     把两个有序单链表合并为一个有序单链表
 */
-// I AM NOT DONE
-
 use std::fmt::{ self, Display, Formatter };
 use std::ptr::NonNull;
 use std::vec::*;
@@ -75,13 +73,58 @@ impl<T> LinkedList<T> {
                 }
         }
     }
+}
+
+// merge需要实现PartialOrd的trait
+impl<T> LinkedList<T> where T: PartialOrd {
     pub fn merge(list_a: LinkedList<T>, list_b: LinkedList<T>) -> Self {
-        //TODO
-        Self {
-            length: 0,
-            start: None,
-            end: None,
+        let mut result = LinkedList::new();
+        let mut p_a = list_a.start;
+        let mut p_b = list_b.start;
+
+        while p_a.is_some() || p_b.is_some() {
+            let next_node = match (p_a, p_b) {
+                (Some(a), Some(b)) => {
+                    let a_val = unsafe { &a.as_ref().val };
+                    let b_val = unsafe { &b.as_ref().val };
+                    if a_val <= b_val {
+                        p_a = unsafe { a.as_ref().next };
+                        Some(a)
+                    } else {
+                        p_b = unsafe { b.as_ref().next };
+                        Some(b)
+                    }
+                }
+                (Some(a), None) => {
+                    p_a = unsafe { a.as_ref().next };
+                    Some(a)
+                }
+                (None, Some(b)) => {
+                    p_b = unsafe { b.as_ref().next };
+                    Some(b)
+                }
+                (None, None) => unreachable!(),
+            };
+
+            let node = next_node.unwrap();
+
+            // 处理尾指针
+            unsafe {
+                node.as_ptr().as_mut().unwrap().next = None;
+            }
+
+            match result.end {
+                None => {
+                    result.start = Some(node);
+                }
+                Some(end_ptr) => unsafe {
+                    (*end_ptr.as_ptr()).next = Some(node);
+                }
+            }
+            result.end = Some(node);
+            result.length += 1;
         }
+        result
     }
 }
 
